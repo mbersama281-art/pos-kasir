@@ -25,46 +25,73 @@ app.use('/api', (req, res, next) => {
 
 app.get('/api/items', (req, res) => res.json(db.items));
 
-app.post('/api/items', (req, res) => {
-  const b = req.body;
-  if (!b.nama) return res.status(400).json({ error: 'Nama wajib diisi' });
-  const item = {
-    id: uid(), nama: String(b.nama).trim(), satuan: b.satuan || 'pcs',
-    beli: +b.beli || 0, jual: +b.jual || 0, stok: +b.stok || 0, min: +b.min || 0
-  };
-  db.items.push(item); save(); res.json(item);
+function clean(b){
+  const n=v=>Math.max(0,+v||0), t=v=>String(v==null?'':v).trim();
+  const o={nama:t(b.nama),satuan:t(b.satuan)||'pcs',isi:n(b.isi),beliDus:n(b.beliDus),beli:n(b.beli),jual:n(b.jual),jualDus:n(b.jualDus),stok:n(b.stok),min:n(b.min),kode:t(b.kode),kodeDus:t(b.kodeDus)};
+  if(o.isi<=0){o.isi=0;o.beliDus=0;o.jualDus=0;o.kodeDus='';}
+  else if(o.beliDus&&!o.beli)o.beli=o.beliDus/o.isi;
+  return o;
+}
+function kodeError(o,id){
+  if(o.kode&&o.kode===o.kodeDus) return 'Barcode satuan dan dus tidak boleh sama';
+  const ks=[o.kode,o.kodeDus].filter(Boolean);
+  const d=db.items.find(i=>i.id!==id&&ks.some(k=>i.kode===k||i.kodeDus===k));
+  return d?'Barcode itu sudah dipakai '+d.nama:'';
+}
+app.post('/api/items',(req,res)=>{
+  const o=clean(req.body);
+  if(!o.nama) return res.status(400).json({error:'Nama wajib diisi'});
+  const e=kodeError(o); if(e) return res.status(400).json({error:e});
+  const item={id:uid(),...o}; db.items.push(item); save(); res.json(item);
 });
-
-app.put('/api/items/:id', (req, res) => {
-  const it = db.items.find(i => i.id === req.params.id);
-  if (!it) return res.status(404).json({ error: 'Tidak ada' });
-  const b = req.body;
-  Object.assign(it, {
-    nama: b.nama ?? it.nama, satuan: b.satuan ?? it.satuan,
-    beli: +b.beli || 0, jual: +b.jual || 0, stok: +b.stok || 0, min: +b.min || 0
-  });
+app.put('/api/items/:id',(req,res)=>{
+  const it=db.items.find(i=>i.id===req.params.id);
+  if(!it) return res.status(404).json({error:'Tidak ada'});
+  const o=clean({...it,...req.body});
+  if(!o.nama) return res.status(400).json({error:'Nama wajib diisi'});
+  const e=kodeError(o,it.id); if(e) return res.status(400).json({error:e});
+  Object.assign(it,o); save(); res.json(it);
+});
+app.delete('/api/items/:id',(req,res)=>{
+  db.items=db.items.filter(i=>i.id!==req.params.id); save(); res.json({ok:true});
+});
+function applyMove(type,it,unit,qty){
+  if(unit==='dus'&&!(it.isi>0)) throw new Error(it.nama+': isi per dus belum diisi');
+  const base=unit==='dus'?qty*it.isi:qty;
+  if(type==='out'){
+    if(base>it.stok) throw new Error('Stok '+it.nama+' kurang (sisa '+it.stok+' '+it.satuan+')');
+    it.stok-=base;
+  } else it.stok+=base;
+  const jual=unit==='dus'?(it.jualDus||it.jual*it.isi)/it.isi:it.jual;
+  db.tx.push({id:uid(),t:Date.now(),itemId:it.id,nama:it.nama,type,qty:base,jual,beli:it.beli});
+}
+app.post('/api/items/:id/move',(req,res)=>{
+  const it=db.items.find(i=>i.id===req.params.id);
+  if(!it) return res.status(404).json({error:'Tidak ada'});
+  const qty=Math.abs(+req.body.qty||0);
+  if(!qty) return res.status(400).json({error:'Jumlah tidak valid'});
+  try{ applyMove(req.body.type==='in'?'in':'out',it,req.body.unit==='dus'?'dus':'satuan',qty); }
+  catch(e){ return res.status(400).json({error:e.message}); }
   save(); res.json(it);
 });
-
-app.delete('/api/items/:id', (req, res) => {
-  db.items = db.items.filter(i => i.id !== req.params.id);
-  save(); res.json({ ok: true });
-});
-
-// Barang masuk / keluar (jual)
-app.post('/api/items/:id/move', (req, res) => {
-  const it = db.items.find(i => i.id === req.params.id);
-  if (!it) return res.status(404).json({ error: 'Tidak ada' });
-  const qty = Math.abs(+req.body.qty || 0);
-  const type = req.body.type;
-  if (!qty) return res.status(400).json({ error: 'Jumlah tidak valid' });
-  if (type === 'out') {
-    if (qty > it.stok) return res.status(400).json({ error: 'Stok tidak cukup (sisa ' + it.stok + ')' });
-    it.stok -= qty;
-  } else it.stok += qty;
-  db.tx.push({ id: uid(), t: Date.now(), itemId: it.id, nama: it.nama, type, qty,
-    jual: it.jual, beli: it.beli });
-  save(); res.json(it);
+// Kasir scan: banyak barang sekaligus (satuan / dus)
+app.post('/api/checkout',(req,res)=>{
+  const type=req.body.type==='in'?'in':'out';
+  const lines=(req.body.lines||[]).map(l=>({itemId:l.itemId,unit:l.unit==='dus'?'dus':'satuan',qty:+l.qty})).filter(l=>l.qty>0);
+  if(!lines.length) return res.status(400).json({error:'Daftar kosong'});
+  const need={};
+  for(const l of lines){
+    const it=db.items.find(i=>i.id===l.itemId);
+    if(!it) return res.status(400).json({error:'Ada barang yang sudah dihapus'});
+    if(l.unit==='dus'&&!(it.isi>0)) return res.status(400).json({error:it.nama+': isi per dus belum diisi'});
+    need[it.id]=(need[it.id]||0)+(l.unit==='dus'?l.qty*it.isi:l.qty);
+  }
+  if(type==='out') for(const id in need){
+    const it=db.items.find(i=>i.id===id);
+    if(need[id]>it.stok) return res.status(400).json({error:'Stok '+it.nama+' kurang (sisa '+it.stok+' '+it.satuan+')'});
+  }
+  for(const l of lines) applyMove(type,db.items.find(i=>i.id===l.itemId),l.unit,l.qty);
+  save(); res.json({ok:true});
 });
 
 app.get('/api/report', (req, res) => {
@@ -126,36 +153,36 @@ app.post('/api/scan', async (req, res) => {
 });
 
 
-// ---- Pesanan ----
+// ---- Pesanan ke gudang / supplier ----
 app.get('/api/orders', (req, res) => res.json(db.orders.slice().reverse()));
 
 app.post('/api/orders', (req, res) => {
   const b = req.body;
-  if (!b.nama) return res.status(400).json({ error: 'Nama pemesan wajib diisi' });
+  if (!b.nama) return res.status(400).json({ error: 'Nama gudang / supplier wajib diisi' });
   const lines = (b.lines || []).map(l => {
     const it = db.items.find(i => i.id === l.itemId);
-    return it && +l.qty > 0 ? { itemId: it.id, nama: it.nama, satuan: it.satuan, qty: +l.qty } : null;
+    if (!it || !(+l.qty > 0)) return null;
+    const unit = l.unit === 'dus' && it.isi > 0 ? 'dus' : 'satuan';
+    return { itemId: it.id, nama: it.nama, satuan: it.satuan, unit, qty: +l.qty,
+      harga: unit === 'dus' ? (it.beliDus || it.beli * it.isi) : it.beli };
   }).filter(Boolean);
   if (!lines.length) return res.status(400).json({ error: 'Pilih minimal 1 barang' });
-  const o = { id: uid(), t: Date.now(), nama: String(b.nama).trim(), catatan: b.catatan || '', lines, status: 'baru' };
+  const o = { id: uid(), t: Date.now(), nama: String(b.nama).trim(), catatan: b.catatan || '', lines, status: 'baru', gudang: true };
   db.orders.push(o); save(); res.json(o);
 });
 
+// Barang dari gudang sudah datang -> stok bertambah
 app.post('/api/orders/:id/done', (req, res) => {
   const o = db.orders.find(x => x.id === req.params.id);
   if (!o) return res.status(404).json({ error: 'Pesanan tidak ada' });
-  if (o.status === 'selesai') return res.status(400).json({ error: 'Sudah selesai' });
+  if (!o.gudang) return res.status(400).json({ error: 'Ini pesanan format lama (pelanggan). Hapus saja.' });
+  if (o.status === 'selesai') return res.status(400).json({ error: 'Sudah ditandai datang' });
   for (const l of o.lines) {
-    const it = db.items.find(i => i.id === l.itemId);
-    if (!it) return res.status(400).json({ error: l.nama + ' sudah dihapus dari stok' });
-    if (it.stok < l.qty) return res.status(400).json({ error: 'Stok ' + it.nama + ' kurang (sisa ' + it.stok + ')' });
+    if (!db.items.find(i => i.id === l.itemId)) return res.status(400).json({ error: l.nama + ' sudah dihapus dari stok' });
   }
-  for (const l of o.lines) {
-    const it = db.items.find(i => i.id === l.itemId);
-    it.stok -= l.qty;
-    db.tx.push({ id: uid(), t: Date.now(), itemId: it.id, nama: it.nama, type: 'out', qty: l.qty, jual: it.jual, beli: it.beli });
-  }
-  o.status = 'selesai'; save(); res.json(o);
+  try { for (const l of o.lines) applyMove('in', db.items.find(i => i.id === l.itemId), l.unit || 'satuan', l.qty); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+  o.status = 'selesai'; o.tglDatang = Date.now(); save(); res.json(o);
 });
 
 app.delete('/api/orders/:id', (req, res) => {

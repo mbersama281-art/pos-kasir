@@ -7,7 +7,7 @@
 <title>Warung Stok</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:#f1f5f4;color:#12201e;padding-bottom:72px}
+body{margin:0;font-family:system-ui,sans-serif;background:#f1f5f4;color:#12201e;padding-left:68px}
 header{background:#0f766e;color:#fff;padding:14px 16px;font-weight:700;font-size:18px;position:sticky;top:0;z-index:5}
 main{padding:12px;max-width:640px;margin:auto}
 .card{background:#fff;border-radius:12px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px #0001}
@@ -21,10 +21,11 @@ button.red{background:#dc2626}
 button.sm{padding:7px 11px;font-size:14px}
 input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;margin-top:4px}
 label{font-size:13px;color:#475569;display:block;margin-top:10px}
-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e2e8f0;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;background:none;color:#64748b;border-radius:0;padding:12px 0;font-size:13px}
-nav button.on{color:#0f766e}
-nav span{display:block;font-size:20px}
+nav{position:fixed;top:0;left:0;bottom:0;width:68px;background:#fff;display:flex;flex-direction:column;align-items:stretch;gap:4px;border-right:1px solid #e2e8f0;padding:10px 4px;z-index:6}
+nav button{background:none;color:#64748b;border-radius:10px;padding:12px 0;font-size:11px;font-weight:600}
+nav button.on{color:#0f766e;background:#ecfdf5}
+nav span{display:block;font-size:22px;margin-bottom:2px}
+@media(min-width:700px){body{padding-left:120px}nav{width:120px;padding:14px 10px}nav button{font-size:14px;padding:14px 0}nav span{font-size:26px}}
 dialog{border:0;border-radius:14px;width:92%;max-width:440px;padding:16px}
 dialog::backdrop{background:#0008}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}

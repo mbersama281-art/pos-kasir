@@ -13,6 +13,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 
 let db = { items: [], tx: [] };
 try { db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')); } catch (e) {}
+if (!db.orders) db.orders = [];
 const save = () => fs.writeFileSync(DB_FILE, JSON.stringify(db));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -122,6 +123,44 @@ app.post('/api/scan', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+
+// ---- Pesanan ----
+app.get('/api/orders', (req, res) => res.json(db.orders.slice().reverse()));
+
+app.post('/api/orders', (req, res) => {
+  const b = req.body;
+  if (!b.nama) return res.status(400).json({ error: 'Nama pemesan wajib diisi' });
+  const lines = (b.lines || []).map(l => {
+    const it = db.items.find(i => i.id === l.itemId);
+    return it && +l.qty > 0 ? { itemId: it.id, nama: it.nama, satuan: it.satuan, qty: +l.qty } : null;
+  }).filter(Boolean);
+  if (!lines.length) return res.status(400).json({ error: 'Pilih minimal 1 barang' });
+  const o = { id: uid(), t: Date.now(), nama: String(b.nama).trim(), catatan: b.catatan || '', lines, status: 'baru' };
+  db.orders.push(o); save(); res.json(o);
+});
+
+app.post('/api/orders/:id/done', (req, res) => {
+  const o = db.orders.find(x => x.id === req.params.id);
+  if (!o) return res.status(404).json({ error: 'Pesanan tidak ada' });
+  if (o.status === 'selesai') return res.status(400).json({ error: 'Sudah selesai' });
+  for (const l of o.lines) {
+    const it = db.items.find(i => i.id === l.itemId);
+    if (!it) return res.status(400).json({ error: l.nama + ' sudah dihapus dari stok' });
+    if (it.stok < l.qty) return res.status(400).json({ error: 'Stok ' + it.nama + ' kurang (sisa ' + it.stok + ')' });
+  }
+  for (const l of o.lines) {
+    const it = db.items.find(i => i.id === l.itemId);
+    it.stok -= l.qty;
+    db.tx.push({ id: uid(), t: Date.now(), itemId: it.id, nama: it.nama, type: 'out', qty: l.qty, jual: it.jual, beli: it.beli });
+  }
+  o.status = 'selesai'; save(); res.json(o);
+});
+
+app.delete('/api/orders/:id', (req, res) => {
+  db.orders = db.orders.filter(x => x.id !== req.params.id);
+  save(); res.json({ ok: true });
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

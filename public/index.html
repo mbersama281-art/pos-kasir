@@ -6,21 +6,27 @@
 <meta name="theme-color" content="#0f766e">
 <title>Warung Stok</title>
 <style>
-:root{--navy:#05276b;--blue:#1d6fdc;--bg:#eef2fb;--line:#dde4f2;--ink:#0f1b3d;--muted:#64709a}
+:root{--navy:#0b5d3b;--blue:#15803d;--soft:#dcf3e4;--bg:#f2f8f4;--line:#dbe8df;--ink:#0f2a1c;--muted:#5f7a69}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);padding:14px}
 .top{background:var(--navy);color:#fff;border-radius:18px;padding:16px 20px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .top .brand{flex:1}.top .brand b{font-size:22px;display:block}.top .brand small{opacity:.75}
 .top button{background:transparent;border:1px solid #fff8;color:#fff;padding:9px 14px}
 .burger{display:none}
-.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;align-items:start}
+.wrap{display:block}
 .side{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;position:sticky;top:14px}
 .logo{display:flex;align-items:center;gap:10px;padding:6px 6px 14px}
 .logo i{font-style:normal;font-size:36px}.logo b{font-size:22px;color:var(--navy);display:block}.logo small{color:var(--muted);font-size:11px}
 .menu button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;color:var(--ink);border-radius:12px;padding:12px 14px;margin-bottom:4px;font-size:15px}
 .menu button.on{background:var(--blue);color:#fff}
 .menu span{width:22px;text-align:center}
-main{min-width:0;max-width:980px}
+main{min-width:0;max-width:980px;margin:0 auto}
+.tabs{display:flex;gap:8px;margin:0 auto 14px;max-width:980px}
+.tabs button{flex:1;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:12px}
+.tabs button.on{background:var(--soft);color:var(--navy);border-color:#a9dcba}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px}
+.mt{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:14px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;text-align:center}
+.mt span{font-size:28px}.mt small{font-size:10px;color:var(--muted);font-weight:400}
 .ptitle{font-size:22px;margin:2px 0 12px}
 h3{font-size:18px;margin:18px 0 10px}
 .card,.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
@@ -32,7 +38,7 @@ h3{font-size:18px;margin:18px 0 10px}
 .alert{border:1px solid #f0a5a5;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .alert b{color:#b42318}
 .day{display:grid;grid-template-columns:92px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.bar{height:10px;border-radius:6px;margin:3px 0;min-width:3px}.b1{background:#2b7de9}.b2{background:#f2742f}
+.bar{height:10px;border-radius:6px;margin:3px 0;min-width:3px}.b1{background:#16a34a}.b2{background:#f2742f}
 .leg{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:6px}
 .leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
 .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -62,26 +68,27 @@ dialog::backdrop{background:#0008}
 </head>
 <body>
 <div class="top">
-  <button class="burger" onclick="$('side').classList.toggle('open')">☰</button>
-  <div class="brand"><b>Warung Stok</b><small>Pemilik · stok &amp; penjualan · v6</small></div>
+  <div class="brand"><b class="nmw">Warung Stok</b><small>Pemilik · stok &amp; penjualan · v7</small></div>
   <button onclick="openCari()">🔎 Cari</button>
   <button onclick="keluar()">Keluar</button>
 </div>
 <div id="toast"></div>
 <div class="wrap">
-<aside class="side" id="side">
-  <div class="logo"><i>🏪</i><div><b>Warung Stok</b><small>Stok &amp; jualan warung, lebih mudah</small></div></div>
-  <div class="menu">
-    <button data-t="beranda" class="on" onclick="tab('beranda')"><span>📊</span>Beranda</button>
-    <button data-t="stok" onclick="tab('stok')"><span>📦</span>Stok Barang</button>
-    <button data-t="kasir" onclick="tab('kasir')"><span>🛒</span>Kasir Scan</button>
-    <button data-t="pesanan" onclick="tab('pesanan')"><span>🚚</span>Pesanan Gudang</button>
-    <button data-t="scan" onclick="tab('scan')"><span>📷</span>Scan Foto</button>
-    <button data-t="lap" onclick="tab('lap')"><span>📈</span>Laporan</button>
-  </div>
-</aside>
+<div class="tabs"><button data-t="beranda" class="on" onclick="tab('beranda')">🏠 Beranda</button><button data-t="menu" onclick="tab('menu')">☰ Menu</button></div>
 <main>
   <section id="tab-beranda"><div id="beranda"></div></section>
+
+  <section id="tab-menu" class="hide"><div class="row"><h2 class="ptitle" style="margin:0">Menu Utama</h2><span class="muted" id="mcount"></span></div><div class="mgrid" id="mgrid" style="margin-top:12px"></div></section>
+
+  <section id="tab-penjualan" class="hide"><h2 class="ptitle">Penjualan</h2><div class="card" id="penjList"></div></section>
+
+  <section id="tab-kontak" class="hide"><div class="row" style="margin-bottom:10px"><h2 class="ptitle" style="margin:0" id="kontakTitle"></h2><button class="sm" onclick="openKontak()">+ Tambah</button></div><div id="kontakList"></div></section>
+
+  <section id="tab-pengaturan" class="hide"><h2 class="ptitle">Pengaturan</h2>
+    <div class="card"><label style="margin:0">Nama warung<input id="p_nama"></label><button style="margin-top:10px" onclick="simpanPengaturan()">Simpan</button></div>
+    <div class="card"><b>Cadangan data</b><p class="muted">Unduh semua data stok ke sebuah file.</p><button class="alt" onclick="backup()">Unduh Cadangan</button></div></section>
+
+  <section id="tab-soon" class="hide"><h2 class="ptitle" id="soonTitle"></h2><div class="card"><p>🚧 Fitur ini sedang disiapkan.</p><button class="alt" onclick="tab('menu')">Kembali ke Menu</button></div></section>
 
   <section id="tab-pesanan" class="hide">
     <div class="row" style="margin-bottom:10px"><b>Pesanan ke gudang</b><button class="sm" onclick="openOrd()">+ Pesanan</button></div>
@@ -132,6 +139,12 @@ dialog::backdrop{background:#0008}
   <input id="cq" placeholder="Cari halaman: stok, pesanan, laporan..." oninput="renderCari()" onkeydown="if(event.key==='Enter'){const f=cariList()[0];if(f){dlgCari.close();tab(f.k)}}">
   <div id="hasilCari" style="margin-top:8px"></div>
   <div style="text-align:right;margin-top:10px"><button class="alt sm" onclick="dlgCari.close()">Tutup</button></div>
+</dialog>
+
+<dialog id="dlgKontak">
+  <b>Tambah kontak</b>
+  <label>Nama<input id="k_nama"></label><label>No. HP<input id="k_hp" inputmode="tel"></label><label>Catatan<input id="k_cat"></label>
+  <div style="text-align:right;margin-top:14px"><button class="alt" onclick="$('dlgKontak').close()">Batal</button> <button onclick="simpanKontak()">Simpan</button></div>
 </dialog>
 
 <dialog id="dlgOrd">
@@ -196,17 +209,69 @@ async function api(url, method='GET', body){
   return j;
 }
 
-const PAGES=[{k:'beranda',n:'Beranda',w:'home ringkasan'},{k:'pesanan',n:'Pesanan',w:'order gudang supplier kulakan restok datang'},{k:'kasir',n:'Kasir scan',w:'scan barcode jual keluar masuk restok'},{k:'stok',n:'Stok',w:'barang gudang'},{k:'scan',n:'Scan foto',w:'kamera foto barcode'},{k:'lap',n:'Laporan',w:'untung penjualan omzet'}];
-function tab(n){
-  PAGES.forEach(p=>$('tab-'+p.k).classList.toggle('hide',p.k!==n));
-  document.querySelectorAll('.menu button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===n));
-  $('side').classList.remove('open');
-  if(n!=='kasir') stopCam();
-  if(n==='kasir') loadKasir();
-  if(n==='lap') loadLap();
-  if(n==='beranda') loadBeranda();
-  if(n==='pesanan') loadPesanan();
+const PAGES=[
+{k:'beranda',n:'Beranda',i:'🏠',w:'home ringkasan dashboard',s:'beranda'},
+{k:'kasir',n:'Kasir',i:'🛒',w:'scan barcode jual',s:'kasir'},
+{k:'produk',n:'Produk',i:'📦',w:'barang master',s:'stok'},
+{k:'kategori',n:'Kategori',i:'🗂️',w:'jenis barang',soon:1},
+{k:'stok',n:'Stok Barang',i:'🏬',w:'gudang warung stok',s:'stok'},
+{k:'pembelian',n:'Pembelian',i:'🚚',w:'pesanan gudang belanja kulakan',s:'pesanan'},
+{k:'penjualan',n:'Penjualan',i:'🧾',w:'riwayat transaksi jual',s:'penjualan'},
+{k:'retur',n:'Retur Barang',i:'↩️',w:'kembali tukar',soon:1},
+{k:'pelanggan',n:'Pelanggan',i:'👥',w:'customer',s:'kontak'},
+{k:'supplier',n:'Supplier',i:'📇',w:'gudang pemasok',s:'kontak'},
+{k:'keuangan',n:'Keuangan',i:'👛',w:'uang',soon:1},
+{k:'hutang',n:'Hutang &amp; Piutang',i:'🤝',w:'kasbon utang',soon:1},
+{k:'lap',n:'Laporan',i:'📈',w:'untung omzet penjualan',s:'lap'},
+{k:'karyawan',n:'Karyawan',i:'👔',w:'pegawai',soon:1},
+{k:'pengaturan',n:'Pengaturan',i:'⚙️',w:'nama warung cadangan',s:'pengaturan'},
+{k:'scan',n:'Scan Foto',i:'📷',w:'kamera foto ai',s:'scan'}];
+const SECS=['beranda','menu','stok','kasir','pesanan','scan','lap','penjualan','kontak','pengaturan','soon'];
+let kJenis='pelanggan';
+function tab(k){
+  const p=PAGES.find(x=>x.k===k)||{s:k};
+  let sec=k==='menu'?'menu':(p.soon?'soon':p.s);
+  if(!SECS.includes(sec)) sec='beranda';
+  SECS.forEach(x=>$('tab-'+x).classList.toggle('hide',x!==sec));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===(sec==='beranda'?'beranda':'menu')));
+  if(sec!=='kasir') stopCam();
+  if(p.soon) $('soonTitle').textContent=p.n.replace('&amp;','&');
+  if(sec==='kasir') loadKasir();
+  if(sec==='lap') loadLap();
+  if(sec==='beranda') loadBeranda();
+  if(sec==='pesanan') loadPesanan();
+  if(sec==='menu') renderMenu();
+  if(sec==='penjualan') loadPenjualan();
+  if(sec==='kontak'){kJenis=k==='supplier'?'supplier':'pelanggan';loadKontak()}
+  if(sec==='pengaturan') $('p_nama').value=localStorage.namaWarung||'Warung Stok';
+  window.scrollTo(0,0);
 }
+function renderMenu(){
+  $('mgrid').innerHTML=PAGES.map(p=>`<button class="mt" onclick="tab('${p.k}')"><span>${p.i}</span>${p.n}${p.soon?'<small>segera</small>':''}</button>`).join('');
+  $('mcount').textContent=PAGES.length+' menu';
+}
+function jam(t){return new Date(t).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'})}
+function aktivitasHtml(tx){
+  return tx.map(t=>{const o=t.type==='out',amt=(o?t.jual:t.beli)*t.qty;
+    return `<div class="row" style="padding:10px 0;border-top:1px solid var(--line)"><div><b>${o?'Penjualan':'Barang masuk'}</b><div class="muted">${esc(t.nama)} × ${t.qty}</div></div><div style="text-align:right"><b class="${o?'pos':'neg'}">${o?'+':'−'} ${rp(amt)}</b><div class="muted">${jam(t.t)}</div></div></div>`}).join('')||'<p class="muted">Belum ada aktivitas.</p>';
+}
+async function loadPenjualan(){
+  try{$('penjList').innerHTML=aktivitasHtml((await api('/api/tx?n=300')).filter(t=>t.type==='out'))}catch(e){toast(e.message)}
+}
+async function loadKontak(){
+  $('kontakTitle').textContent=kJenis==='supplier'?'Supplier':'Pelanggan';
+  try{
+    const ks=await api('/api/kontak?jenis='+kJenis);
+    $('kontakList').innerHTML=ks.map(k=>`<div class="card"><div class="row"><div><b>${esc(k.nama)}</b><div class="muted">${esc(k.hp||'-')}${k.catatan?' • '+esc(k.catatan):''}</div></div><button class="sm red" onclick="hapusKontak('${k.id}')">Hapus</button></div></div>`).join('')||'<p class="muted" style="text-align:center">Belum ada data.</p>';
+  }catch(e){toast(e.message)}
+}
+function openKontak(){['k_nama','k_hp','k_cat'].forEach(i=>$(i).value='');$('dlgKontak').showModal()}
+async function simpanKontak(){
+  try{await api('/api/kontak','POST',{jenis:kJenis,nama:$('k_nama').value,hp:$('k_hp').value,catatan:$('k_cat').value});$('dlgKontak').close();toast('Tersimpan ✅');loadKontak()}catch(e){toast(e.message)}
+}
+async function hapusKontak(id){if(!confirm('Hapus data ini?'))return;try{await api('/api/kontak/'+id,'DELETE');loadKontak()}catch(e){toast(e.message)}}
+function applyNama(){document.querySelectorAll('.nmw').forEach(e=>e.textContent=localStorage.namaWarung||'Warung Stok')}
+function simpanPengaturan(){localStorage.namaWarung=$('p_nama').value.trim()||'Warung Stok';applyNama();toast('Tersimpan ✅')}
 function cariList(){const q=$('cq').value.toLowerCase();return PAGES.filter(p=>(p.n+' '+p.w).toLowerCase().includes(q))}
 function renderCari(){
   $('hasilCari').innerHTML=cariList().map(p=>`<button class="alt" style="width:100%;text-align:left;margin-top:6px" onclick="dlgCari.close();tab('${p.k}')">${p.n}</button>`).join('')||'<p class="muted">Tidak ketemu.</p>';
@@ -225,7 +290,7 @@ async function backup(){
 }
 async function loadBeranda(){
   try{
-    const [r,it,od]=await Promise.all([api('/api/report'),api('/api/items'),api('/api/orders')]);
+    const [r,it,od,tx]=await Promise.all([api('/api/report'),api('/api/items'),api('/api/orders'),api('/api/tx?n=8')]);
     items=it;
     const low=it.filter(i=>i.stok<=i.min), baru=od.filter(o=>o.status==='baru'&&o.gudang);
     const lastB=+localStorage.lastBackup||0, stale=Date.now()-lastB>7*864e5;
@@ -250,7 +315,8 @@ async function loadBeranda(){
           <div class="bar b2" style="width:${Math.round(Math.max(0,d.untung)/max*100)}%"></div><span class="muted">${rp(d.untung)}</span></div></div>`).join('')}
       </div>
       <div class="card"><b>⚠️ Stok warung hampir habis (${low.length})</b>
-        ${low.slice(0,8).map(i=>`<div class="row" style="margin-top:8px"><span>${esc(i.nama)}</span><span class="badge low">${i.stok} ${esc(i.satuan)}</span></div>`).join('')||'<p class="muted">Aman, belum ada yang menipis.</p>'}</div>`;
+        ${low.slice(0,8).map(i=>`<div class="row" style="margin-top:8px"><span>${esc(i.nama)}</span><span class="badge low">${i.stok} ${esc(i.satuan)}</span></div>`).join('')||'<p class="muted">Aman, belum ada yang menipis.</p>'}</div>
+      <h3>Aktivitas Terbaru</h3><div class="card">${aktivitasHtml(tx)}</div>`;
   }catch(e){toast(e.message)}
 }
 
@@ -505,6 +571,7 @@ async function loadLap(){
       </div>`;
   }catch(e){toast(e.message)}
 }
+applyNama();
 load();
 loadBeranda();
 </script>
